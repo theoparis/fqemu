@@ -3,7 +3,7 @@
 set fish_trace 1
 
 # Path to your system's OVMF folder
-set -g OVMF_PATH /usr/share/edk2-ovmf
+set -g OVMF_PATH /usr/share/qemu
 # Set OVFM firmware file for your arch
 set -g OVMF_FIRMWARE $OVMF_PATH/edk2-x86_64-code.fd
 # Set OVFM vars file for your arch
