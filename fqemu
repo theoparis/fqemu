@@ -1,0 +1,118 @@
+#!/bin/fish
+
+# set fish_trace 1
+
+# Path to your system's OVMF folder
+set OVMF_PATH /usr/share/qemu
+# Set OVFM firmware file for your arch
+set OVMF_FIRMWARE $OVMF_PATH/edk2-x86_64-code.fd
+# Set OVFM vars file for your arch
+set DEFAULT_OVMF_VARS $OVMF_PATH/edk2-i386-vars.fd
+# Set path to localy stored vars
+set OVMF_VARS ./vars.fd
+# Path to vm's disk
+set DISK_IMG ./disk.img
+# Spice server port
+set SPICE_PORT 5901
+# Path to install iso
+set ISO_ARGS -cdrom /mnt/data-0/linux/chimera/chimera-linux-x86_64-LIVE-20240707-base.iso
+
+set is_gui 0
+set qemu_args
+
+# Base run function
+# TODO different network devices
+function run_base
+    qemu-system-x86_64 -enable-kvm \
+        -drive if=pflash,format=raw,file=$OVMF_FIRMWARE,readonly=yes \
+        -drive if=pflash,format=raw,file=$OVMF_VARS \
+        -drive file=$DISK_IMG,if=virtio \
+        -cpu host \
+        -nic bridge,br=br0,model=virtio \
+        -device virtio-rng-pci \
+        -m 8G -smp 12 \
+        $argv
+end
+
+# Start base run function with additional options
+function run
+    if test $is_gui = 1
+        run_base -vga qxl -spice port=$SPICE_PORT,addr=127.0.0.1,disable-ticketing=on \
+            -audio driver=spice,model=virtio \
+            -monitor stdio \
+            $qemu_args
+    else
+        run_base -nographic \
+            $qemu_args
+    end
+end
+
+# Start a spice client
+function spice
+    remote-viewer --hotkeys=toggle-fullscreen=shift+f11,release-cursor=ctrl+alt \
+        spice://localhost:$SPICE_PORT
+end
+
+# Reset vm's disk file and OVMF vars
+function reset
+    cp $DEFAULT_OVMF_VARS $OVMF_VARS
+    qemu-img create -f qcow2 $DISK_IMG 15G
+end
+
+# Display help message
+function usage
+    echo "NAME:
+    fqemu - Start qemu virtual machines with a simple fish shell script
+
+USAGE:
+    fqemu command [command options]
+
+COMMANDS:
+    setup    Create empty disk and OVMF (UEFI) vars
+    run      Start VM
+    spice    Open SPICE client for a running VM
+    help     Display a help message
+
+RUN:
+    fqemu run [-g] [-i=<iso-image>] [-- <qemu-args>]
+        --gui,-g          Start VM with SPICE server
+        --iso,-i          Path to an ISO image
+        -- <qemu-args>    Pass additional QEMU args to the VM"
+end
+
+# Exit on error
+function die
+    if set -q argv[1]
+        echo $argv
+    end
+    exit 1
+end
+
+# Parse args
+set cmd $argv[1]
+set -e argv[1]
+switch $cmd
+    case setup
+        setup
+    case run
+        while set -q argv[1]
+            switch $argv[1]
+                case -g --gui
+                    set is_gui 1
+                case --
+                    set qemu_args $argv[2..]
+                    break
+                case '*'
+                    die $argv[1] "- unknown option"
+            end
+            set -e argv[1]
+        end
+        run
+    case spice
+        spice
+    case help
+        usage
+    case '*'
+        usage
+        die
+end
