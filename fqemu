@@ -14,8 +14,6 @@ set OVMF_VARS ./vars.fd
 set DISK_IMG ./disk.img
 # Spice server port
 set SPICE_PORT 5901
-# Path to install iso
-set ISO_ARGS -cdrom /mnt/data-0/linux/chimera/chimera-linux-x86_64-LIVE-20240707-base.iso
 
 set is_gui 0
 set qemu_args
@@ -54,7 +52,7 @@ function spice
 end
 
 # Reset vm's disk file and OVMF vars
-function reset
+function setup
     cp $DEFAULT_OVMF_VARS $OVMF_VARS
     qemu-img create -f qcow2 $DISK_IMG 15G
 end
@@ -74,7 +72,7 @@ COMMANDS:
     help     Display a help message
 
 RUN:
-    fqemu run [-g] [-i=<iso-image>] [-- <qemu-args>]
+    fqemu run [-g] [-i <iso-image>] [-- <qemu-args>]
         --gui,-g          Start VM with SPICE server
         --iso,-i          Path to an ISO image
         -- <qemu-args>    Pass additional QEMU args to the VM"
@@ -99,6 +97,13 @@ switch $cmd
             switch $argv[1]
                 case -g --gui
                     set is_gui 1
+                case -i --iso
+                    if set -q argv[2]
+                        set qemu_args $qemu_args -cdrom $argv[2]
+                        set -e argv[1]
+                    else
+                        die $argv[1] "- no ISO path provided"
+                    end
                 case --
                     set qemu_args $argv[2..]
                     break
