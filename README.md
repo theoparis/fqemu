@@ -25,24 +25,24 @@ Create directory for a new vm and copy the script
 
 ```console
 > mkdir /path/to/vm/dir
-> cp run.fish /path/to/vm/dir
+> cp fqemu /path/to/vm/dir
 > cd /path/to/vm/dir
 ```
 
 Setup empty disk and UEFI vars
 
 ```
-> ./run.fish reset
+> ./fqemu setup
 ```
 
 Start the vm with mounted iso
 
 ```
-> ./run.fish iso gui
+> ./fqemu run --gui --iso /path/to/iso
 ```
 
 Open spice client
 
 ```
-> ./run.fish spice
+> ./fqemu spice
 ```
