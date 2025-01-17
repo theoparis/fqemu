@@ -4,9 +4,22 @@ Start qemu virtual machines with a simple fish shell script.
 
 ## Install QEMU
 
-### Chimera Linux
-
 For x86_64 host this should be enough
+
+### Gentoo
+
+Don't forget to enable `spice` flag for `app-emulation/qemu`.
+
+```
+# /etc/portage/package.use/qemu
+app-emulation/qemu spice
+```
+
+```console
+# emerge -av qemu virt-viewer
+```
+
+### Chimera Linux
 
 ```console
 # apk add qemu qemu-img qemu-system-x86_64 cmd:remote-viewer
